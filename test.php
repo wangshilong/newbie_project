@@ -56,6 +56,12 @@ skip:
 	}
 }
 
+//handle repeated case,this is a littele complex. will deal it latter.
+function send_mrbs_repeat($con)
+{
+	echo "test mrbs repeat"	;
+}
+
 function send_close($con)
 {
 	mysql_close($con);
@@ -63,6 +69,7 @@ function send_close($con)
 
 $con=send_setup();
 send_mrbs_entry($con);
+send_mrbs_repeat($con);
 send_close($con);
 
 ?>
