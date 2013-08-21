@@ -20,6 +20,8 @@ function send_setup()
 	return $con;
 }
 
+//precondition: the system has guranteed that there is only one booking
+//for a special point which makes it easier to process.
 //simple case for booking once
 function send_mrbs_entry($con)
 {
@@ -56,7 +58,12 @@ skip:
 	}
 }
 
-//handle repeated case,this is a littele complex. will deal it latter.
+//handle repeated case,this is a little complex. will deal it latter.
+//now the idea is:
+//Step1: select all the repeated entries whose start_time <= now_time + 10 * 60 and end_date >= now_time + 10 * 60.
+//Step2: check that if there is a satified time that meets condition:
+//----->calculate interval time for repeated entry due to repeated type(defined as interval)
+//----->if condition (end_date - start_time) % interval <= 10 * 60 meets then we catch it.
 function send_mrbs_repeat($con)
 {
 	echo "test mrbs repeat"	;
