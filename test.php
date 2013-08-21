@@ -25,24 +25,27 @@ function send_setup()
 //simple case for booking once
 function send_mrbs_entry($con)
 {
-	//$now_time=(time()+10*60);
-	$now_time=0;
+	$now_time=(time()+10*60);
 	$sql="select start_time,end_time,room_id,description,create_by".
-		" from mrbs_entry where mrbs_entry.start_time>=0";
+		" from mrbs_entry where start_time='$now_time'";
 	$result=mysql_query($sql, $con);
 	if (!$result) {
 		echo "NULL\n";
 		return;
 	}
 	$row=mysql_fetch_array($result);
-	//print_r($row);
 	while ($row)
 	{
 		$sql="select id,area_id from mrbs_room where id='$row[room_id]'";
+
 		$res=mysql_query($sql);
 		$res=mysql_fetch_array($res, MYSQL_ASSOC);
-		echo "roomid: $res[id], area_id: $res[area_id]\n";
-		echo "start_time: $row[start_time], end_time: $row[end_time]\n";
+		$msg="roomid: $res[id], area_id: $res[area_id]\n";
+		$tmp=date('Y-m-d H:i:s',$row['start_time']);
+		$msg=$msg."start_time: $tmp ";
+		$tmp=date('Y-m-d H:i:s', $row['end_time']);
+		$msg=$msg."end_time: $tmp\n";
+		echo $msg;
 
 		$sql="select name,email from mrbs_users where name='$row[create_by]'";
 		$res=mysql_query($sql, $con);
@@ -52,7 +55,7 @@ function send_mrbs_entry($con)
 		}
 		$res=mysql_fetch_array($res, MYSQL_ASSOC);
 		echo "email: $res[email]\n";
-		//mail("public", "Test mail", "Fucking the world!", "headers");
+		//mail($res[email], "booking meeting reminder", $msg, "header");
 skip:
 		$row=mysql_fetch_array($result, MYSQL_ASSOC);
 	}
@@ -66,9 +69,9 @@ skip:
 //----->if condition (end_date - start_time) % interval <= 10 * 60 meets then we catch it.
 function send_mrbs_repeat($con)
 {
-	$now_time=0;
-	$sql="select start_time,end_time,room_id,description,create_by,end_date type".
-		" from mrbs_repeat where start_time<=now_time and end_date>=now_time";
+	$now_time=(time()+10*60);
+	$sql="select start_time,end_time,room_id,description,create_by".
+		" from mrbs_repeat where start_time='$now_time'";
 	$result=mysql_query($sql, $con);
 	if (!$result) {
 		echo "NULL\n";
@@ -77,37 +80,26 @@ function send_mrbs_repeat($con)
 	$row=mysql_fetch_array($result);
 	while ($row)
 	{
-		$interval=0
-		switch($row[type])
-		{
-			case 1:
-				$interval=$(60*60*24);
-				break;
-			case 2:
-				$interval=$(60*60*24*7);
-				break;
-			default:
-				echo "unexpected repeated mode";
-				goto skip;
-		}
-		$check=$($row[end_date]-$row[start_time])%interval;
-		if($check<=$interval) {
-			$sql="select id,area_id from mrbs_room where id='$row[room_id]'";
-			$res=mysql_query($sql);
-			$res=mysql_fetch_array($res, MYSQL_ASSOC);
-			echo "roomid: $res[id], area_id: $res[area_id]\n";
-			echo "start_time: $row[start_time], end_time: $row[end_time]\n";
+		$sql="select id,area_id from mrbs_room where id='$row[room_id]'";
 
-			$sql="select name,email from mrbs_users where name='$row[create_by]'";
-			$res=mysql_query($sql, $con);
-			if (!$res) {
-				echo "NULL\n";
-				goto skip;
-			}
-			$res=mysql_fetch_array($res, MYSQL_ASSOC);
-			echo "email: $res[email]\n";
-			//mail("public", "Test mail", "Fucking the world!", "headers");
+		$res=mysql_query($sql);
+		$res=mysql_fetch_array($res, MYSQL_ASSOC);
+		$msg="roomid: $res[id], area_id: $res[area_id]\n";
+		$tmp=date('Y-m-d H:i:s',$now_time);
+		$msg=$msg."start_time: $tmp";
+		$tmp=date('Y-m-d H:i:s', $end_time);
+		$msg=$msg."end_time: $tmp\n";
+		echo $msg;
+
+		$sql="select name,email from mrbs_users where name='$row[create_by]'";
+		$res=mysql_query($sql, $con);
+		if (!$res) {
+			echo "NULL\n";
+			goto skip;
 		}
+		$res=mysql_fetch_array($res, MYSQL_ASSOC);
+		echo "email: $res[email]\n";
+		mail($email, "booking meeting reminder", $msg, "");
 skip:
 		$row=mysql_fetch_array($result, MYSQL_ASSOC);
 	}
@@ -117,8 +109,10 @@ function send_close($con)
 {
 	mysql_close($con);
 }
+
 $con=send_setup();
 send_mrbs_entry($con);
 send_mrbs_repeat($con);
 send_close($con);
+
 ?>
