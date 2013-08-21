@@ -66,17 +66,59 @@ skip:
 //----->if condition (end_date - start_time) % interval <= 10 * 60 meets then we catch it.
 function send_mrbs_repeat($con)
 {
-	echo "test mrbs repeat"	;
+	$now_time=0;
+	$sql="select start_time,end_time,room_id,description,create_by,end_date type".
+		" from mrbs_repeat where start_time<=now_time and end_date>=now_time";
+	$result=mysql_query($sql, $con);
+	if (!$result) {
+		echo "NULL\n";
+		return;
+	}
+	$row=mysql_fetch_array($result);
+	while ($row)
+	{
+		$interval=0
+		switch($row[type])
+		{
+			case 1:
+				$interval=$(60*60*24);
+				break;
+			case 2:
+				$interval=$(60*60*24*7);
+				break;
+			default:
+				echo "unexpected repeated mode";
+				goto skip;
+		}
+		$check=$($row[end_date]-$row[start_time])%interval;
+		if($check<=$interval) {
+			$sql="select id,area_id from mrbs_room where id='$row[room_id]'";
+			$res=mysql_query($sql);
+			$res=mysql_fetch_array($res, MYSQL_ASSOC);
+			echo "roomid: $res[id], area_id: $res[area_id]\n";
+			echo "start_time: $row[start_time], end_time: $row[end_time]\n";
+
+			$sql="select name,email from mrbs_users where name='$row[create_by]'";
+			$res=mysql_query($sql, $con);
+			if (!$res) {
+				echo "NULL\n";
+				goto skip;
+			}
+			$res=mysql_fetch_array($res, MYSQL_ASSOC);
+			echo "email: $res[email]\n";
+			//mail("public", "Test mail", "Fucking the world!", "headers");
+		}
+skip:
+		$row=mysql_fetch_array($result, MYSQL_ASSOC);
+	}
 }
 
 function send_close($con)
 {
 	mysql_close($con);
 }
-
 $con=send_setup();
 send_mrbs_entry($con);
 send_mrbs_repeat($con);
 send_close($con);
-
 ?>
